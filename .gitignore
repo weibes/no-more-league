@@ -1,0 +1,4 @@
+build/
+*.spec
+dumb.cpp
+env/
