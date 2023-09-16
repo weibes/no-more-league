@@ -1,4 +1,10 @@
-build/
+src_python/build/
 *.spec
 dumb.cpp
-env/
+src_python/env/
+x64/
+x86/
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj*
