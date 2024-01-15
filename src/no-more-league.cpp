@@ -1,18 +1,21 @@
 // imports
-#include <windows.h>
+#include <Windows.h>
 #include <lmcons.h>
-#include <cstdlib>
+#include <tchar.h>
+#include <psapi.h>
 #include <iostream>
 #include <string>
 using namespace std;
 
 // Checking to ensure that
-int systemCheck() {
+int systemCheck() 
+{
     string environmentName(getenv("windir"));
     cout << environmentName; // returns "C:/WINDOWS"
     return environmentName.erase(0, 3) != "WINDOWS"; // returns 0 if it DOES equal windows
 }
-
+/* 
+TODO: Implement.
 int setupPersistence() {
     // persistence:
     char currUsername[UNLEN + 1];
@@ -23,39 +26,64 @@ int setupPersistence() {
     // 'C:/Users/{uname}/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup'
     return 0;
 }
-/*
-int checkProc() {
-    while (false) {
-        // curr_proc = list(psu.process_iter(['pid', 'name', 'username']))
-        bool inList = false;
-        // process req_proc = none;
-        string curr_proc = "hello"; // TEMPORARY, TODO PUT IN PROPERLY
-        for (int i = 0; i = curr_proc.length();  i++) {
+*/
 
+void PrintProcessNameAndID( DWORD processID )
+{
+    TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+
+    // Get a handle to the process.
+
+    HANDLE hProcess = OpenProcess( PROCESS_QUERY_INFORMATION |
+                                   PROCESS_VM_READ,
+                                   FALSE, processID );
+
+    // Get the process name.
+
+    if (NULL != hProcess )
+    {
+        HMODULE hMod;
+        DWORD cbNeeded;
+
+        if ( EnumProcessModules( hProcess, &hMod, sizeof(hMod), 
+             &cbNeeded) )
+        {
+            GetModuleBaseName( hProcess, hMod, szProcessName, 
+                               sizeof(szProcessName)/sizeof(TCHAR) );
+        }
+    }
+
+    // Print the process name and identifier.
+
+    _tprintf( TEXT("%s  (PID: %u)\n"), szProcessName, processID );
+
+    // Release the handle to the process.
+
+    CloseHandle( hProcess );
+}
+
+int main() 
+{
+    if (!systemCheck) 
+    {
+        cout << "System running is not windows. This is built only for windows machines atm." << endl;
+        return 1;
+    }
+    DWORD processes[1024], cbNeeded, cProcesses;
+    if (!EnumProcesses(processes, sizeof(processes), &cbNeeded))
+    {
+        return 1;
+    }
+
+    // number of process IDs
+    cProcesses = cbNeeded / sizeof(DWORD);
+    unsigned int i;
+    for (i = 0; i < cProcesses; i++)
+    {
+        if (processes[i] != 0)
+        {
+            PrintProcessNameAndID(processes[i]);
         }
     }
     return 0;
 }
-
-*/
-int main() {
-    if (!systemCheck) {
-        return 1;
-    }
-    // we know we are on windows now
-    setupPersistence();
-    //checkProc();
-    // return 0;
-}
-
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

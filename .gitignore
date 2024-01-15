@@ -8,3 +8,5 @@ x86/
 *.sln
 *.vcxproj
 *.vcxproj*
+*.exe
+*.obj
