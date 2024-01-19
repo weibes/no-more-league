@@ -28,7 +28,7 @@ int setupPersistence() {
 }
 */
 
-void PrintProcessNameAndID( DWORD processID )
+TCHAR* PrintProcessNameAndID( DWORD processID )
 {
     TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
 
@@ -60,6 +60,12 @@ void PrintProcessNameAndID( DWORD processID )
     // Release the handle to the process.
 
     CloseHandle( hProcess );
+    return szProcessName;
+}
+
+void TerminateProcess(DWORD  processID)
+{
+
 }
 
 int main() 
@@ -75,14 +81,20 @@ int main()
         return 1;
     }
 
-    // number of process IDs
+    
     cProcesses = cbNeeded / sizeof(DWORD);
     unsigned int i;
+    // get processes
     for (i = 0; i < cProcesses; i++)
     {
         if (processes[i] != 0)
         {
-            PrintProcessNameAndID(processes[i]);
+            TCHAR currProcessName[MAX_PATH]= PrintProcessNameAndID(processes[i]);
+            // terminate league process
+            if (currProcessName == "League of Legends.exe")
+            {
+                TerminateProcess(processes[i]);
+            }
         }
     }
     return 0;
