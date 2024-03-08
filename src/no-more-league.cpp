@@ -5,12 +5,13 @@
 #include <psapi.h>
 #include <iostream>
 #include <string>
+#include "no-more-league.h"
 using namespace std;
 
-// Checking to ensure that
+// Checking to ensure that os is properly windows, 
 int systemCheck() 
 {
-    string environmentName(getenv("windir"));
+    std::string environmentName(getenv("windir"));
     cout << environmentName; // returns "C:/WINDOWS"
     return environmentName.erase(0, 3) != "WINDOWS"; // returns 0 if it DOES equal windows
 }
@@ -28,16 +29,20 @@ int setupPersistence() {
 }
 */
 
-TCHAR* PrintProcessNameAndID( DWORD processID )
+void createPopup()
 {
-    TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+    std::out << "haha aeiou" << std::endl;
+}
 
+void findAndKill( DWORD processID )
+{
+    TCHAR szProcessName[MAX_PATH] = TEXT("<unkown>");
+    
     // Get a handle to the process.
 
     HANDLE hProcess = OpenProcess( PROCESS_QUERY_INFORMATION |
                                    PROCESS_VM_READ,
-                                   FALSE, processID );
-
+                                   FALSE, processID);
     // Get the process name.
 
     if (NULL != hProcess )
@@ -49,30 +54,31 @@ TCHAR* PrintProcessNameAndID( DWORD processID )
              &cbNeeded) )
         {
             GetModuleBaseName( hProcess, hMod, szProcessName, 
-                               sizeof(szProcessName)/sizeof(TCHAR) );
+                sizeof(szProcessName) / sizeof(TCHAR));
         }
     }
 
     // Print the process name and identifier.
-
     _tprintf( TEXT("%s  (PID: %u)\n"), szProcessName, processID );
+    
+    //check if league, kill if so
+    TCHAR clientName[17] = TEXT("LeagueClient.exe");
+    TCHAR gameName[22] = TEXT("League of Legends.exe");
+    if (szProcessName == clientName || szProcessName == gameName)
+    {
+        TerminateProcess(hProcess, processID);
+        createPopup();
+    }
 
     // Release the handle to the process.
-
     CloseHandle( hProcess );
-    return szProcessName;
-}
-
-void TerminateProcess(DWORD  processID)
-{
-
 }
 
 int main() 
 {
     if (!systemCheck) 
     {
-        cout << "System running is not windows. This is built only for windows machines atm." << endl;
+        cout << "System running is not windows. This is built only for windows machines." << endl;
         return 1;
     }
     DWORD processes[1024], cbNeeded, cProcesses;
@@ -80,8 +86,7 @@ int main()
     {
         return 1;
     }
-
-    
+  
     cProcesses = cbNeeded / sizeof(DWORD);
     unsigned int i;
     // get processes
@@ -89,12 +94,7 @@ int main()
     {
         if (processes[i] != 0)
         {
-            TCHAR currProcessName[MAX_PATH]= PrintProcessNameAndID(processes[i]);
-            // terminate league process
-            if (currProcessName == "League of Legends.exe")
-            {
-                TerminateProcess(processes[i]);
-            }
+            findAndKill(processes[i]); 
         }
     }
     return 0;

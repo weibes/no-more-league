@@ -10,3 +10,7 @@ x86/
 *.vcxproj*
 *.exe
 *.obj
+CMakeFiles/
+*.cmake
+CMakeCache.txt
+.vscode/
