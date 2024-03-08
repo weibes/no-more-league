@@ -1,34 +1,31 @@
-// imports
 #include "no-more-league.h"
-#include <Windows.h>
-#include <iostream>
-#include <lmcons.h>
-#include <psapi.h>
-#include <shellapi.h>
-#include <string>
-#include <tchar.h>
-
-using namespace std;
 
 // Checking to ensure that os is properly windows,
 int systemCheck() {
   std::string environmentName(getenv("windir"));
-  cout << environmentName; // returns "C:/WINDOWS"
+  std::cout << environmentName; // returns "C:/WINDOWS"
   return environmentName.erase(0, 3) !=
          "WINDOWS"; // returns 0 if it DOES equal windows
 }
 
 void createPersistence() {
+  // copy into startup folder
   DWORD pid = GetCurrentProcessId();
-  HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                FALSE, pid);
-  TCHAR currFolder[MAX_PATH];
+  HANDLE hProcess =
+      OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+  TCHAR currPath[MAX_PATH];
   HMODULE hMod;
   DWORD cbNeeded;
   EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded);
-  GetModuleFileName(hMod, currFolder, pid);
-  std::cout << currFolder << std::endl;
-
+  GetModuleFileName(hMod, currPath, pid);
+  std::cout << currPath << std::endl;
+  LPCTSTR newPath = STARTUP_LOCATION;
+  if (!CopyFile(currPath, newPath, false)) {
+    std::cout << "file copy failed. Copying to user startup folder..."
+              << std::endl;
+    std::cout << "error data:" << GetLastError() << std::endl;
+  }; // todo add user copy here
+  // add to registry TODO
 }
 void createPopup() {
   LPCTSTR messageText = "No league for u.\nGo do your leetcode.";
@@ -37,7 +34,8 @@ void createPopup() {
   int retVal = MessageBox(NULL, messageText, captionText, type);
 }
 
-void findAndKill(DWORD processID) {
+bool findAndKill(DWORD processID) {
+  bool found = false;
   TCHAR szProcessName[MAX_PATH] = TEXT("<unkown>");
 
   // Get a handle to the process.
@@ -55,32 +53,37 @@ void findAndKill(DWORD processID) {
                         sizeof(szProcessName) / sizeof(TCHAR));
     }
   }
-
   // check if league, kill if so
-  TCHAR clientName[17] = TEXT("LeagueClient.exe");
-  TCHAR gameName[22] = TEXT("League of Legends.exe");
-  if (szProcessName == clientName || szProcessName == gameName) {
+  DWORD cmpFlags = NORM_IGNOREWIDTH;
+  if (strcmp(GAME_CLIENT_NAME, szProcessName) || strcmp(GAME_NAME, szProcessName)) {
     // main logic for termination and launching leetcode nonsense
-    TerminateProcess(hProcess, processID);
+    found = true;
+    std::cout << "Found league." << std::endl;
+    if (!TerminateProcess(hProcess, processID)) {
+      std::cout << "termination failed." << std::endl;
+      std::cout << "error: " << GetLastError() << std::endl;
+    };
     createPopup();
-    ShellExecute(0, 0, "https://leetcode.com", 0, 0, SW_SHOW);
+    ShellExecute(0, 0, WEBSITE, 0, 0, SW_SHOW);
   }
 
   // Release the handle to the process.
   CloseHandle(hProcess);
+  return found;
 }
 
 int main() {
   if (!systemCheck) {
-    cout << "System running is not windows. This is built only for windows "
+    std::cout << "System running is not windows. This is built only for windows "
             "machines."
-         << endl;
+         << std::endl;
     return 1;
   }
 
   createPersistence();
   while (true) // loop for testing
   {
+    std::cout << "running check.." << std::endl;
     DWORD processes[1024], cbNeeded, cProcesses;
     if (!EnumProcesses(processes, sizeof(processes), &cbNeeded)) {
       return 1;
@@ -91,7 +94,10 @@ int main() {
     // get processes
     for (i = 0; i < cProcesses; i++) {
       if (processes[i] != 0) {
-        findAndKill(processes[i]);
+        bool isFound = findAndKill(processes[i]);
+        if (isFound) {
+          break; // bad practice i know but yeno
+        }
       }
     }
     // sleep function, check every... 30 seconds? Could maybe do 1 minute.
