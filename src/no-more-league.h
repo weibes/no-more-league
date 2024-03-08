@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <windows.h>
 
 #ifndef UNICODE  
   typedef std::string String; 
@@ -7,5 +9,5 @@
 #endif
 
 int systemCheck(); 
-void findAndKill( DWORD processID );
+void findAndKill(DWORD processID);
 void createPopup();
