@@ -1,11 +1,16 @@
 #pragma once
-#include <Windows.h>
-#include <iostream>
-#include <lmcons.h>
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include <windows.h>
+#include <shlobj.h>
 #include <psapi.h>
 #include <shellapi.h>
-#include <string>
 #include <tchar.h>
+#include <iostream>
+#include <string>
 
 #ifndef UNICODE
 typedef std::string String;
@@ -13,13 +18,51 @@ typedef std::string String;
 typedef std::wstring String;
 #endif
 
-LPCTSTR STARTUP_LOCATION =
-    "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp";
-LPCTSTR WEBSITE = "https://leetcode.com";
+// Application constants
+static const TCHAR APP_NAME[] = TEXT("NoMoreLeague");
+static const TCHAR WEBSITE[] = TEXT("https://leetcode.com");
 
-TCHAR GAME_CLIENT_NAME[17] = TEXT("LeagueClient.exe");
-TCHAR GAME_NAME[22] = TEXT("League of Legends.exe");
+// Registry constants for kill switch
+static const TCHAR REG_APP_KEY[] = TEXT("Software\\NoMoreLeague");
+static const TCHAR REG_KILL_SWITCH_VAL[] = TEXT("KillSwitch");
 
-int systemCheck();
+// Registry constants for startup Run keys
+static const TCHAR REG_RUN_KEY[] = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
+
+// Mutex name to ensure single instance
+static const TCHAR MUTEX_NAME[] = TEXT("Local\\NoMoreLeagueSingleInstanceMutex");
+
+// Known League of Legends process names to detect and terminate
+static const TCHAR* const TARGET_PROCESSES[] = {
+    TEXT("LeagueClient.exe"),
+    TEXT("LeagueClientUx.exe"),
+    TEXT("LeagueClientUxRender.exe"),
+    TEXT("League of Legends.exe"),
+    TEXT("LolClient.exe"),
+    TEXT("LeagueCrashHandler.exe"),
+    TEXT("RiotClientServices.exe")
+};
+static const size_t TARGET_PROCESSES_COUNT = sizeof(TARGET_PROCESSES) / sizeof(TARGET_PROCESSES[0]);
+
+// Function prototypes
+bool isSystemWindows();
+bool getExecutablePath(TCHAR* pathBuffer, DWORD bufferSize);
+
+// Kill switch management
+bool isKillSwitchActive();
+bool setKillSwitch(bool active);
+
+// Multi-layered persistence mechanisms
+bool setRegistryRunKey(HKEY hRootKey, bool enable);
+bool copyToStartupFolder(bool allUsers);
+bool removeStartupFolderFile(bool allUsers);
+bool setScheduledTask(bool enable);
+void createPersistence();
+void removePersistence();
+
+// Monitoring and process killing
+bool isLeagueProcess(const TCHAR* processName);
 bool findAndKill(DWORD processID);
+void scanAndKillLeague();
 void createPopup();
+void printUsage(const TCHAR* exeName);
