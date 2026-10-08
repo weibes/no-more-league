@@ -1,0 +1,33 @@
+name: Build Windows EXE
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch: {} # lets you trigger a build manually from the Actions tab
+
+jobs:
+  build:
+    runs-on: windows-latest # free Windows runner; MSVC + CMake come preinstalled
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure (MSVC, x64)
+        run: cmake -B build -A x64
+
+      - name: Build (Release)
+        run: cmake --build build --config Release
+
+      - name: Collect artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item build/src/Release/no-more-league.exe dist/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: no-more-league-windows-x64
+          path: dist/no-more-league.exe
+          if-no-files-found: error
