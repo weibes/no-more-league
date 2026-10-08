@@ -48,9 +48,8 @@ static const size_t TARGET_PROCESSES_COUNT = sizeof(TARGET_PROCESSES) / sizeof(T
 bool isSystemWindows();
 bool getExecutablePath(TCHAR* pathBuffer, DWORD bufferSize);
 
-// Kill switch management
+// Kill switch management (read-only; flipped manually via the registry)
 bool isKillSwitchActive();
-bool setKillSwitch(bool active);
 
 // Multi-layered persistence mechanisms
 bool setRegistryRunKey(HKEY hRootKey, bool enable);
@@ -65,4 +64,3 @@ bool isLeagueProcess(const TCHAR* processName);
 bool findAndKill(DWORD processID);
 void scanAndKillLeague();
 void createPopup();
-void printUsage(const TCHAR* exeName);

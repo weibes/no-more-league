@@ -16,7 +16,7 @@ A lightweight Windows background guardian that detects League of Legends process
   - **Admin Vectors (Optional)**: Automatically writes to `HKLM` Run key and Common Startup folder if run as Administrator.
   - **Self-Healing Loop**: The background monitor periodically verifies and re-enforces all persistence mechanisms if any were deleted or tampered with.
 - **Single-Instance Protection**: Enforces a named Windows mutex (`Local\NoMoreLeagueSingleInstanceMutex`) so duplicate instances never conflict or create double popups.
-- **Fail-Safe Kill Switch**: Built-in kill switch to cleanly deactivate the software and uninstall all persistence entries whenever you are ready.
+- **Hidden Registry Kill Switch**: There is **no command-line option** to stop the program. The only way to deactivate it is to know the kill-switch registry value and flip it by hand — a deliberate speed bump against impulsive quitting.
 
 ---
 
@@ -44,17 +44,24 @@ This automatically establishes persistence across all startup locations and begi
 
 ### Command Line Options
 
-- `no-more-league.exe --kill` (or `-k`): **Activates the kill switch**, removes all persistence entries (Registry keys, Startup folder files, Task Scheduler task), and exits.
-- `no-more-league.exe --resume` (or `-r`): **Deactivates the kill switch**, re-installs startup persistence, and resumes monitoring.
-- `no-more-league.exe --status` (or `-s`): Displays whether the kill switch is currently active.
-- `no-more-league.exe --help` (or `-h`): Shows the help screen.
+None. The executable ignores all arguments. This is intentional: there is no `--kill`,
+`--resume`, or `--status` flag, so the program cannot be shut off with a quick command.
 
 ---
 
 ## Kill Switch via Registry
 
-If the process is running in the background or you want to disable it without the command line:
+The only way to deactivate the guardian is through the registry — you have to know
+the exact key and value:
 
-1. Double-click **`killswitch_on.reg`** to set `HKCU\Software\NoMoreLeague\KillSwitch = 1`.
-   - The running background process will detect this during its next check, remove all persistence entries, and exit automatically.
-2. To turn it back on later, double-click **`killswitch_off.reg`** and run `no-more-league.exe`.
+1. Set the DWORD value `HKCU\Software\NoMoreLeague\KillSwitch` to `1`
+   (e.g. in `regedit`, or via a `.reg` file you write yourself).
+   - On its next 30-second check, the running background process detects this,
+     removes all persistence entries (Run keys, Startup folder copies, the
+     scheduled task), and exits.
+2. To re-enable, set `KillSwitch` back to `0` (or delete the value) and run
+   `no-more-league.exe` again.
+
+Because this is a self-control tool, the registry step is deliberately not exposed
+through the program itself — the friction of having to remember and edit the key by
+hand is the point.

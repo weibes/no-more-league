@@ -34,41 +34,6 @@ bool isKillSwitchActive() {
     return (lResult == ERROR_SUCCESS && dwValue == 1);
 }
 
-// Set or clear the registry kill switch
-bool setKillSwitch(bool active) {
-    HKEY hKey;
-    DWORD disposition;
-    LONG lResult = RegCreateKeyEx(
-        HKEY_CURRENT_USER,
-        REG_APP_KEY,
-        0,
-        NULL,
-        REG_OPTION_NON_VOLATILE,
-        KEY_WRITE,
-        NULL,
-        &hKey,
-        &disposition
-    );
-
-    if (lResult != ERROR_SUCCESS) {
-        std::cerr << "Failed to open/create registry key. Error: " << lResult << std::endl;
-        return false;
-    }
-
-    DWORD dwValue = active ? 1 : 0;
-    lResult = RegSetValueEx(
-        hKey,
-        REG_KILL_SWITCH_VAL,
-        0,
-        REG_DWORD,
-        (const BYTE*)&dwValue,
-        sizeof(dwValue)
-    );
-
-    RegCloseKey(hKey);
-    return (lResult == ERROR_SUCCESS);
-}
-
 // Add or remove entry in Windows Registry Run key (HKCU or HKLM)
 bool setRegistryRunKey(HKEY hRootKey, bool enable) {
     HKEY hKey;
@@ -382,54 +347,26 @@ void scanAndKillLeague() {
     }
 }
 
-// Print command-line help
-void printUsage(const TCHAR* exeName) {
-    std::cout << "No More League - Anti-League Background Guardian\n"
-              << "Usage: " << exeName << " [option]\n\n"
-              << "Options:\n"
-              << "  (no args)      Run background monitoring with multi-layered persistence\n"
-              << "  --kill, -k     Activate kill switch: remove persistence and terminate\n"
-              << "  --resume, -r   Deactivate kill switch: re-enable persistence and monitor\n"
-              << "  --status, -s   Display current persistence and kill switch status\n"
-              << "  --help, -h     Show this help screen\n"
-              << std::endl;
-}
-
 int main(int argc, char* argv[]) {
     if (!isSystemWindows()) {
         std::cerr << "This application is designed only for Windows systems." << std::endl;
         return 1;
     }
 
-    // CLI Argument Handling
-    if (argc > 1) {
-        std::string arg = argv[1];
-        if (arg == "--kill" || arg == "-k" || arg == "--uninstall" || arg == "--stop") {
-            setKillSwitch(true);
-            removePersistence();
-            std::cout << "Kill switch activated. No More League is deactivated." << std::endl;
-            return 0;
-        } else if (arg == "--resume" || arg == "-r" || arg == "--install" || arg == "--start") {
-            setKillSwitch(false);
-            std::cout << "Kill switch deactivated. Starting monitoring..." << std::endl;
-        } else if (arg == "--status" || arg == "-s") {
-            bool active = isKillSwitchActive();
-            std::cout << "Kill Switch Status: " << (active ? "ACTIVATED (disabled)" : "DEACTIVATED (active)") << std::endl;
-            return 0;
-        } else if (arg == "--help" || arg == "-h" || arg == "/?") {
-            printUsage(argv[0]);
-            return 0;
-        } else {
-            std::cout << "Unknown option: " << arg << std::endl;
-            printUsage(argv[0]);
-            return 1;
-        }
-    }
+    // No command-line control surface is exposed. Any arguments are ignored so
+    // that the program cannot be disabled by a convenient flag. The only way to
+    // deactivate it is to know the registry kill switch and flip it by hand
+    // (see below).
+    (void)argc;
+    (void)argv;
 
-    // Check if Kill Switch is engaged in Registry
+    // Check if Kill Switch is engaged in Registry.
+    // Deactivation requires setting HKCU\Software\NoMoreLeague\KillSwitch = 1
+    // directly via the registry (e.g. regedit or a .reg file). There is no CLI
+    // equivalent.
     if (isKillSwitchActive()) {
         std::cout << "[Info] Kill switch is active in registry (HKCU\\Software\\NoMoreLeague\\KillSwitch = 1).\n"
-                  << "Monitoring is deactivated. To re-enable, run with --resume or set KillSwitch to 0."
+                  << "Monitoring is deactivated. To re-enable, set KillSwitch to 0 in the registry."
                   << std::endl;
         return 0;
     }
