@@ -8,13 +8,18 @@ A lightweight Windows background guardian that detects League of Legends process
 
 ## Features
 
-- **Process Detection & Termination**: Automatically monitors for League of Legends clients and game executables (`LeagueClient.exe`, `League of Legends.exe`, `LeagueClientUx.exe`, etc.) and terminates them immediately.
-- **Multi-Layered Startup Persistence**: Hardens against accidental or impulsive removal across multiple startup vectors:
-  - **User Registry Run Key**: `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
+- **Process Detection & Termination**: Automatically monitors for League of Legends clients and game executables (`LeagueClient.exe`, `League of Legends.exe`, `LeagueClientUx.exe`, `RiotClientServices.exe`, `LoLSafeGuard.exe`, 19+ total variants including Riot Shell, LoL crash handlers, and client renderers) and terminates them immediately.
+- **Multi-Layer Startup Persistence**: Hardened against accidental or impulsive removal across 10+ startup vectors:
+  - **HKCU Registry Run Key**: `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
+  - **HKLM Registry Run Key** (admin): `HKLM\Software\Microsoft\Windows\CurrentVersion\Run`
   - **User Startup Folder**: `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`
-  - **Windows Task Scheduler**: Registered on-logon scheduled task (`schtasks`)
-  - **Admin Vectors (Optional)**: Automatically writes to `HKLM` Run key and Common Startup folder if run as Administrator.
-  - **Self-Healing Loop**: The background monitor periodically verifies and re-enforces all persistence mechanisms if any were deleted or tampered with.
+  - **All Users Startup Folder** (admin): `%ALLUSERSPROFILE%\Startup`
+  - **Windows Task Scheduler**: Multiple registered tasks with generic names (`NoMoreLeague`, `SystemHealthCheck`, `WindowsDefenderUpdate`)
+  - **Winlogon Shell Hijack**: Appends executable to `HKCU\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell` — survives nearly all user-facing removal methods
+  - **Decoy Backups**: Copies of the binary planted in `%APPDATA%`, `%TEMP%` under generic names (`updatesrv.exe`, `SystemHelper.exe`) that automatically restore the main executable if deleted
+  - **Quick Launch / Explorer Markers**: Shell shortcut and IE persistence key for recovery paths
+- **Self-Healing Loop**: The background monitor periodically (every 30s) re-enforces **all** persistence mechanisms, restores from decoy backups, and re-establishes registry entries — even if someone manually deleted Task Scheduler tasks or Startup folder copies.
+- **Process Resurrection on Kill Switch Clear**: When the kill switch is toggled off, the program relaunches itself automatically via `ShellExecuteEx` before exiting its cleanup routine, making it survive users who try to close Task Manager during shutdown.
 - **Single-Instance Protection**: Enforces a named Windows mutex (`Local\NoMoreLeagueSingleInstanceMutex`) so duplicate instances never conflict or create double popups.
 - **Hidden Registry Kill Switch**: There is **no command-line option** to stop the program. The only way to deactivate it is to know the kill-switch registry value and flip it by hand — a deliberate speed bump against impulsive quitting.
 
