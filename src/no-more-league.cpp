@@ -433,16 +433,16 @@ bool createQuickLaunchShortcut() {
         TEXT("%s\\NoMoreLeague.lnk"), startupDir);
 
     IShellLink* psl;
-    HRESULT hres = CoCreateInstance(&CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, 
-        &IID_IShellLink, (void**)&psl);
-    
+    HRESULT hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,
+        IID_IShellLink, (void**)&psl);
+
     if (SUCCEEDED(hres)) {
         IPersistFile* ppf;
         TCHAR exePath[MAX_PATH];
         getExecutablePath(exePath, MAX_PATH);
 
         psl->SetPath(exePath);
-        psl->QueryInterface(&IID_IPersistFile, (void**)&ppf);
+        psl->QueryInterface(IID_IPersistFile, (void**)&ppf);
         
         // Convert to wide string required by IPersistFile
         WCHAR wLinkPath[MAX_PATH];
